@@ -552,6 +552,8 @@ namespace TrettioEtt
 
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
         {
+            thrownPile.Add(card);
+
             // Benjamin 
             for (int i = 0; i < opponentHand.Count; ++i)
             {
