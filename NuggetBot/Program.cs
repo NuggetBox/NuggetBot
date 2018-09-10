@@ -10,7 +10,6 @@ namespace TrettioEtt
 
     class Program
     {
-
         static void Main(string[] args)
         {
             Console.WindowWidth = 120;
