@@ -10,7 +10,6 @@ namespace TrettioEtt
 
     class Program
     {
-
         static void Main(string[] args)
         {
             Console.WindowWidth = 120;
@@ -149,7 +148,6 @@ namespace TrettioEtt
         }
 
     }
-
 
     class Game
     {
@@ -521,7 +519,7 @@ namespace TrettioEtt
     {
         List<Card> opponentHand = new List<Card>();
         List<Card> opponentDontLike = new List<Card>();
-        List<Card> thrownPile = new List<Card>();
+        List<Card> discardPile = new List<Card>();
 
         Card latestThrownCard;
 
@@ -553,40 +551,55 @@ namespace TrettioEtt
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
         {
             // Benjamin 
-            for (int i = 0; i < opponentHand.Count; ++i)
+
+            if (lastTurn)
             {
-                if (opponentHand[i] == card)
+                for (int i = 0; i < Hand.Count; ++i)
                 {
-                    opponentHand.Remove(card);
+
                 }
             }
-
-            if (OpponentsLatestCard != null)
+            else if (!lastTurn)
             {
-                opponentTakePile = false;
-                opponentHand.Add(OpponentsLatestCard);
-            }
-            else if (OpponentsLatestCard == null)
-            {
-                opponentTakePile = true;
-                opponentDontLike.Add(card);
-            }
-
-            aceCount = 0;
-            for (int i = 0; i < Hand.Count; ++i)
-            {
-                if (Hand[i].Value == 11)
+                // Vår gissning av motsåndarens hand måste uppdateras om de slänger 1 kort.
+                for (int i = 0; i < opponentHand.Count; ++i)
                 {
-                    ++aceCount;
+                    if (opponentHand[i] == card)
+                    {
+                        opponentHand.Remove(card);
+                    }
                 }
-            }
 
-            if (aceCount >= 2 && card.Value == 11)
-            {
-                return true;
-            }
+                // Om de tar upp från skräphögen så kan vi lägga till ett kort i vår gissning av motståndares hand.
+                if (OpponentsLatestCard != null)
+                {
+                    opponentTakePile = false;
+                    opponentHand.Add(OpponentsLatestCard);
+                }
+                // Om de tar upp från den vanliga högen så gillar de förmodligen inte de kortet.
+                else if (OpponentsLatestCard == null)
+                {
+                    opponentTakePile = true;
+                    opponentDontLike.Add(card);
+                }
 
-            return false; //Temp return
+                aceCount = 0;
+                // Räknar antal ess vi har i vår hand.
+                for (int i = 0; i < Hand.Count; ++i)
+                {
+                    if (Hand[i].Value == 11)
+                    {
+                        ++aceCount;
+                    }
+                }
+                // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
+                if (aceCount >= 2 && card.Value == 11)
+                {
+                    return true;
+                }
+
+                discardPile.Add(card);
+            }
 
             //if (card.Value == 11 || (card.Value == 10 && card.Suit == BestSuit))
             //{
@@ -596,6 +609,8 @@ namespace TrettioEtt
             //{
             //    return false;
             //}
+
+            return false; //Temp return
         }
 
         public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen
@@ -633,7 +648,6 @@ namespace TrettioEtt
 
         // Lägg gärna till egna hjälpmetoder här
     }
-
 
     class BasicPlayer : Player //Denna spelare fungerar exakt som MyPlayer. Ändra gärna i denna för att göra tester.
     {
