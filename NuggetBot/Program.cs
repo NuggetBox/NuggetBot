@@ -640,7 +640,7 @@ namespace TrettioEtt
 
         public BasicPlayer()
         {
-            Name = "BasicPlayer";
+            Name = "Basic Player";
         }
 
         public override bool Knacka(int round)
