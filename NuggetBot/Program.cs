@@ -527,7 +527,6 @@ namespace TrettioEtt
 
         int
             aceCount,
-            maybeBestValue,
             round;
         float
             averageCardValue = 7.3f,
@@ -544,11 +543,10 @@ namespace TrettioEtt
             this.round = round;
             Order();
 
-            for (int i = 0; i < Hand.Count; ++i)
+            if (round == 1 && Game.Score(this) > averageStartValue)
             {
 
             }
-
             if (Game.Score(this) >= 23)
             {
                 return true;
