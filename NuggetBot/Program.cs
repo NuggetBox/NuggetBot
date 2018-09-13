@@ -542,7 +542,7 @@ namespace TrettioEtt
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
         {
             this.round = round;
-            Hand = Hand.OrderBy(x => x.Value).ToList();
+            Order();
 
             for (int i = 0; i < Hand.Count; ++i)
             {
