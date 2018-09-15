@@ -83,6 +83,7 @@ namespace TrettioEtt
         }
 
     }
+
     class Card
     {
         public int Value { get; private set; } //Kortets värde enligt reglerna i Trettioett, t.ex. dam = 10
@@ -515,8 +516,6 @@ namespace TrettioEtt
     }
 
     //TODO
-    // Göra en metod som kollar den "verkliga" best suit som adderar upp kort med skräphögskortet.
-    
     class NuggetBot : Player
     {
         List<Card> opponentEstHand = new List<Card>();
@@ -541,12 +540,8 @@ namespace TrettioEtt
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
         {
             this.round = round;
-            Order();
+            SortHand();
 
-            if (round == 1 && Game.Score(this) > averageStartValue)
-            {
-
-            }
             if (Game.Score(this) >= 23)
             {
                 return true;
@@ -560,7 +555,7 @@ namespace TrettioEtt
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
         {
             // Benjamin 
-            Order();
+            SortHand();
 
             OpponentGuess(card);
 
@@ -585,7 +580,7 @@ namespace TrettioEtt
             if (lastTurn)
             {
                 Hand.Add(card);
-                Order();
+                SortHand();
 
                 if (Game.Score(this) > preGameScore)
                 {
@@ -601,13 +596,7 @@ namespace TrettioEtt
             if (!lastTurn)
             {
                 Hand.Add(card);
-                Order();
-
-                // Om det är runda 1 och efter du låtsas plockat upp skräphögskortet har sämre än den genomsnittliga starthanden
-                if (round == 1 && Game.Score(this) < averageStartValue)
-                {
-                    
-                }
+                SortHand();
 
                 // Om skräphögskortet resulterar i en bättre poäng.
                 if (Game.Score(this) > preGameScore)
@@ -639,21 +628,32 @@ namespace TrettioEtt
 
         public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort. 
         {
-            Order();
+            SortHand();
             Game.Score(this);
 
-            Card worstCard = Hand[0];
+            Card worstCard = null;
+
+            int bestSuitScore = 0;
+            int handScore = 0;
 
             // Slänger JUST NU oberoende av motståndarens bästa suit.
             for (int i = 0; i < Hand.Count; ++i)
             {
                 if (Hand[i].Suit != BestSuit)
                 {
-                    if (Hand[i].Value < worstCard.Value)
+                    if (Game.HandScore(Hand, Hand[i]) > bestSuitScore)
                     {
-                        worstCard = Hand[i];
+                        bestSuitScore = Game.HandScore(Hand, Hand[i]);
+                        if (worstCard == null || Hand[i].Value < worstCard.Value)
+                        {
+                            worstCard = Hand[i];
+                        }
                     }
                 }
+            }
+            if (worstCard == null)
+            {
+                worstCard = Hand[0];
             }
 
             return worstCard;
@@ -698,7 +698,7 @@ namespace TrettioEtt
             }
         }
 
-        void Order()
+        void SortHand()
         {
             Hand = Hand.OrderBy(x => x.Value).ToList();
         }
