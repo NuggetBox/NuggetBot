@@ -83,6 +83,7 @@ namespace TrettioEtt
         }
 
     }
+
     class Card
     {
         public int Value { get; private set; } //Kortets värde enligt reglerna i Trettioett, t.ex. dam = 10
@@ -515,8 +516,6 @@ namespace TrettioEtt
     }
 
     //TODO
-    // Göra en metod som kollar den "verkliga" best suit som adderar upp kort med skräphögskortet.
-    
     class NuggetBot : Player
     {
         List<Card> opponentEstHand = new List<Card>();
@@ -525,8 +524,12 @@ namespace TrettioEtt
 
         Card latestThrownCard;
 
-        int aceCount;
-        int maybeBestValue;
+        int
+            aceCount,
+            round;
+        float
+            averageCardValue = 7.3f,
+            averageStartValue = 14.6f;
         bool opponentTakePile;
 
         public NuggetBot()
@@ -536,12 +539,10 @@ namespace TrettioEtt
 
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
         {
-            for (int i = 0; i < Hand.Count; ++i)
-            {
+            this.round = round;
+            SortHand();
 
-            }
-
-            if (Game.Score(this) >= 30)
+            if (Game.Score(this) >= 23)
             {
                 return true;
             }
@@ -554,12 +555,33 @@ namespace TrettioEtt
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
         {
             // Benjamin 
+            SortHand();
+
+            OpponentGuess(card);
+
+            aceCount = 0;
+            // Räknar antal ess vi har i vår hand.
+            for (int i = 0; i < Hand.Count; ++i)
+            {
+                if (Hand[i].Value == 11)
+                {
+                    ++aceCount;
+                }
+            }
+            // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
+            if (aceCount >= 2 && card.Value == 11)
+            {
+                return true;
+            }
+
+            int preGameScore = Game.Score(this);
 
             // Plocka upp så vi har ett så stort värde som möjligt, om skräphögskortet skulle resultera i en ny bestsuit.
             if (lastTurn)
             {
-                int preGameScore = Game.Score(this);
                 Hand.Add(card);
+                SortHand();
+
                 if (Game.Score(this) > preGameScore)
                 {
                     Hand.Remove(card);
@@ -573,45 +595,20 @@ namespace TrettioEtt
             }
             if (!lastTurn)
             {
-                OpponentGuess(card);
-            }
-            if (!lastTurn)
-            {
-                // Vår gissning av motsåndarens hand måste uppdateras om de slänger 1 kort.
-                for (int i = 0; i < opponentEstHand.Count; ++i)
-                {
-                    if (opponentEstHand[i] == card)
-                    {
-                        opponentEstHand.Remove(card);
-                    }
-                }
+                Hand.Add(card);
+                SortHand();
 
-                // Om de tar upp från skräphögen så kan vi lägga till ett kort i vår gissning av motståndares hand.
-                if (OpponentsLatestCard != null)
+                // Om skräphögskortet resulterar i en bättre poäng.
+                if (Game.Score(this) > preGameScore)
                 {
-                    opponentTakePile = false;
-                    opponentEstHand.Add(OpponentsLatestCard);
-                }
-                // Om de tar upp från den vanliga högen så gillar de förmodligen inte de kortet.
-                if (OpponentsLatestCard == null)
-                {
-                    opponentTakePile = true;
-                    opponentDontLike.Add(card);
-                }
-
-                aceCount = 0;
-                // Räknar antal ess vi har i vår hand.
-                for (int i = 0; i < Hand.Count; ++i)
-                {
-                    if (Hand[i].Value == 11)
-                    {
-                        ++aceCount;
-                    }
-                }
-                // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
-                if (aceCount >= 2 && card.Value == 11)
-                {
+                    Hand.Remove(card);
                     return true;
+                }
+                // Om skräphögskortet inte resulterar i en bättre poäng
+                if (Game.Score(this) <= preGameScore)
+                {
+                    Hand.Remove(card);
+                    return false;
                 }
 
                 discardPile.Add(card);
@@ -629,21 +626,35 @@ namespace TrettioEtt
             return false; //Temp return
         }
 
-        public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort.
+        public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort. 
         {
+            SortHand();
             Game.Score(this);
 
-            Card worstCard = Hand.First();
+            Card worstCard = null;
 
-            for (int i = 1; i < Hand.Count; i++)
+            int bestSuitScore = 0;
+            int handScore = 0;
+
+            // Slänger JUST NU oberoende av motståndarens bästa suit.
+            for (int i = 0; i < Hand.Count; ++i)
             {
-                if (Hand[i].Value < worstCard.Value)
+                if (Hand[i].Suit != BestSuit)
                 {
-                    worstCard = Hand[i];
+                    if (Game.HandScore(Hand, Hand[i]) > bestSuitScore)
+                    {
+                        bestSuitScore = Game.HandScore(Hand, Hand[i]);
+                        if (worstCard == null || Hand[i].Value < worstCard.Value)
+                        {
+                            worstCard = Hand[i];
+                        }
+                    }
                 }
             }
-
-            latestThrownCard = worstCard;
+            if (worstCard == null)
+            {
+                worstCard = Hand[0];
+            }
 
             return worstCard;
         }
@@ -685,6 +696,11 @@ namespace TrettioEtt
                 opponentTakePile = true;
                 opponentDontLike.Add(card);
             }
+        }
+
+        void SortHand()
+        {
+            Hand = Hand.OrderBy(x => x.Value).ToList();
         }
 
         // Lägg gärna till egna hjälpmetoder här
