@@ -578,11 +578,11 @@ namespace TrettioEtt
             if (!lastTurn)
             {
                 // Vår gissning av motsåndarens hand måste uppdateras om de slänger 1 kort.
-                for (int i = 0; i < opponentHand.Count; ++i)
+                for (int i = 0; i < opponentEstHand.Count; ++i)
                 {
-                    if (opponentHand[i] == card)
+                    if (opponentEstHand[i] == card)
                     {
-                        opponentHand.Remove(card);
+                        opponentEstHand.Remove(card);
                     }
                 }
 
@@ -590,7 +590,7 @@ namespace TrettioEtt
                 if (OpponentsLatestCard != null)
                 {
                     opponentTakePile = false;
-                    opponentHand.Add(OpponentsLatestCard);
+                    opponentEstHand.Add(OpponentsLatestCard);
                 }
                 // Om de tar upp från den vanliga högen så gillar de förmodligen inte de kortet.
                 if (OpponentsLatestCard == null)
