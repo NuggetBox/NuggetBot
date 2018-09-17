@@ -532,7 +532,8 @@ namespace TrettioEtt
             round;
         float
             averageCardValue = 7.3f,
-            averageStartValue = 13f;
+            moreThan50startHandValue = 14.6f,
+            averageStartHandValue = 12.1f;
         bool opponentTakePile;
 
         public NuggetBot()
