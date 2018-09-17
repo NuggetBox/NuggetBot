@@ -634,7 +634,6 @@ namespace TrettioEtt
             Card worstCard = null;
 
             int bestSuitScore = 0;
-            int handScore = 0;
 
             //// Slänger JUST NU oberoende av motståndarens bästa suit.
             //for (int i = 0; i < Hand.Count; ++i)
@@ -644,8 +643,6 @@ namespace TrettioEtt
             //        worstCard = Hand[i];
             //    }
             //}
-            int bestScore = 0;
-            int handScore = 0;
 
             for (int i = 0; i < Hand.Count; ++i)
             {
@@ -665,7 +662,6 @@ namespace TrettioEtt
             {
                 worstCard = Hand[0];
             }
-
 
             return worstCard;
         }
