@@ -524,10 +524,11 @@ namespace TrettioEtt
         List<Card> discardPile = new List<Card>();
 
         Card scrapPileCard;
-        
+
 
         int
             aceCount,
+            amountKnownCards,
             round;
         float
             averageCardValue = 7.3f,
@@ -542,6 +543,7 @@ namespace TrettioEtt
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
         {
             this.round = round;
+            amountKnownCards = opponentEstHand.Count;
             SortHand();
 
             if (Game.Score(this) >= 23)
