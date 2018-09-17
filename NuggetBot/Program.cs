@@ -637,7 +637,17 @@ namespace TrettioEtt
             int bestSuitScore = 0;
             int handScore = 0;
 
-            // Slänger JUST NU oberoende av motståndarens bästa suit.
+            //// Slänger JUST NU oberoende av motståndarens bästa suit.
+            //for (int i = 0; i < Hand.Count; ++i)
+            //{
+            //    if (Hand[i].Suit != BestSuit && Hand[i].Value < worstCard.Value)
+            //    {
+            //        worstCard = Hand[i];
+            //    }
+            //}
+            int bestScore = 0;
+            int handScore = 0;
+
             for (int i = 0; i < Hand.Count; ++i)
             {
                 if (Hand[i].Suit != BestSuit)
@@ -656,6 +666,7 @@ namespace TrettioEtt
             {
                 worstCard = Hand[0];
             }
+
 
             return worstCard;
         }
@@ -702,6 +713,16 @@ namespace TrettioEtt
         void SortHand()
         {
             Hand = Hand.OrderBy(x => x.Value).ToList();
+        }
+
+        int HandScore()
+        {
+            int handScore = 0;
+            for (int i = 0; i < Hand.Count; ++i)
+            {
+                handScore += Hand[i].Value;
+            }
+            return handScore;
         }
 
         // Lägg gärna till egna hjälpmetoder här
