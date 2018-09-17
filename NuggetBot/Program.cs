@@ -523,7 +523,8 @@ namespace TrettioEtt
         List<Card> opponentDontLike = new List<Card>();
         List<Card> discardPile = new List<Card>();
 
-        Card latestThrownCard;
+        Card scrapPileCard;
+        
 
         int
             aceCount,
@@ -556,6 +557,7 @@ namespace TrettioEtt
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
         {
             // Benjamin 
+            scrapPileCard = card;
             SortHand();
 
             OpponentGuess(card);
@@ -812,7 +814,7 @@ namespace TrettioEtt
             {
                 return true;
             }
-            else if (round == 1 && Game.Score(this) >= 20)
+            else if (round == 1 && Game.Score(this) >= 20 && round % 2 != 0)
             {
                 return true;
             }
