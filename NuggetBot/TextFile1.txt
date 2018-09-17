@@ -1,1 +1,5 @@
 ﻿Fucka upp motståndarens AI genom att plocka upp orelevanta kort?
+
+Matematisk skit vi vill veta:
+-Vad motståndaren kommer att ha när vi knackar runda ett
+-När vi ska knacka på respektive runda
