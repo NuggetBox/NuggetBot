@@ -533,6 +533,7 @@ namespace TrettioEtt
         float
             averageCardValue = 7.3f,
             moreThan50startHandValue = 14.6f,
+            averageGayValue = 13f,
             averageStartHandValue = 12.1f;
         bool opponentTakePile;
 
