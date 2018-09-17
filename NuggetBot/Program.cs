@@ -626,7 +626,7 @@ namespace TrettioEtt
             return false; //Temp return
         }
 
-        public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort. 
+        public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort.
         {
             SortHand();
             Game.Score(this);
