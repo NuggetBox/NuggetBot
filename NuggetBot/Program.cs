@@ -962,36 +962,6 @@ namespace TrettioEtt
                 worstCard = GetWorstCard();
 
             return worstCard;
-
-            /*SortHand();
-            Game.Score(this);
-
-            Card worstCard = null;
-
-            int bestSuitScore = 0;
-            int handScore = 0;
-
-            // Slänger JUST NU oberoende av motståndarens bästa suit.
-            for (int i = 0; i < Hand.Count; ++i)
-            {
-                if (Hand[i].Suit != BestSuit)
-                {
-                    if (Game.HandScore(Hand, Hand[i]) > bestSuitScore)
-                    {
-                        bestSuitScore = Game.HandScore(Hand, Hand[i]);
-                        if (worstCard == null || Hand[i].Value < worstCard.Value)
-                        {
-                            worstCard = Hand[i];
-                        }
-                    }
-                }
-            }
-            if (worstCard == null)
-            {
-                worstCard = Hand[0];
-            }
-
-            return worstCard;*/
         }
 
         public override void SpelSlut(bool wonTheGame) // Anropas när ett spel tar slut. Wongames++ får ej ändras!
