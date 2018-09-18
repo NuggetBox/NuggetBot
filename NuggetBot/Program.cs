@@ -1220,13 +1220,13 @@ namespace TrettioEtt
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
         {
             int handValue = Game.Score(this);
-            ++turn;
 
-            if (games == 0)
+            if (handValues.Count <= turn)
             {
                 handValues.Add(new List<int>());
             }
             handValues[turn].Add(handValue);
+            ++turn;
 
             return false;
         }
@@ -1327,17 +1327,7 @@ namespace TrettioEtt
         public override void SpelSlut(bool wonTheGame) // Anropas när ett spel tar slut. Wongames++ får ej ändras!
         {
             ++games;
-            Console.WriteLine(games);
             turn = 0;
-
-            if (games == 1)
-            {
-                fewestTurns = handValues[games].Count;
-            }
-            if (handValues[games].Count < fewestTurns)
-            {
-                fewestTurns = handValues[games].Count;
-            }
 
             if (wonTheGame)
             {
