@@ -20,6 +20,9 @@ namespace TrettioEtt
             players.Add(new NuggetBot());
             players.Add(new BasicPlayer());
             players.Add(new Bot2Beat());
+            players.Add(new ICommitDie());
+            players.Add(new MathBot1());
+            players.Add(new MathBot2());
 
             Console.WriteLine("Vilka två spelare skall mötas?");
             for (int i = 1; i <= players.Count; i++)
@@ -525,7 +528,6 @@ namespace TrettioEtt
 
         Card scrapPileCard;
 
-
         int
             aceCount,
             amountKnownCards,
@@ -542,11 +544,34 @@ namespace TrettioEtt
             Name = "NuggetBot";
         }
 
-        public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
+        public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
         {
             this.round = round;
             amountKnownCards = opponentEstHand.Count;
             SortHand();
+
+            // Om vi vet 3 av deras kort kan vi kolla om deras hand + skräphögskortet blir bättre än vår hand, om den inte blir de så knackar vi.
+            if (amountKnownCards == 3)
+            {
+                opponentEstHand.Add(scrapPileCard);
+                opponentEstHand = opponentEstHand.OrderBy(x => x.Value).ToList();
+                int opponentScore = Game.HandScore(opponentEstHand, scrapPileCard);
+                int opponentScrapScore = Game.HandScore(opponentEstHand, null);
+
+                // Om de kan skapa en bättre hand än våran nästa runda så knackar vi inte.
+                if (opponentScrapScore > Game.Score(this))
+                {
+                    return false;
+                }
+                // Om skräphögskortet inte resulterar i en bättre hand för motståndaren så är chansen liten att de drar ett kort av just deras suit, därför borde vi i 3 av 4 fall knacka.
+                if (opponentScrapScore == opponentScore)
+                {
+                    if (opponentScore < Game.Score(this))
+                    {
+                        return true;
+                    }
+                }
+            }
 
             if (Game.Score(this) >= 23)
             {
@@ -566,8 +591,8 @@ namespace TrettioEtt
 
             OpponentGuess(card);
 
-            aceCount = 0;
             // Räknar antal ess vi har i vår hand.
+            aceCount = 0;
             for (int i = 0; i < Hand.Count; ++i)
             {
                 if (Hand[i].Value == 11)
@@ -621,15 +646,6 @@ namespace TrettioEtt
                 discardPile.Add(card);
             }
 
-            //if (card.Value == 11 || (card.Value == 10 && card.Suit == BestSuit))
-            //{
-            //    return true;
-            //}
-            //else
-            //{
-            //    return false;
-            //}
-
             return false; //Temp return
         }
 
@@ -641,15 +657,6 @@ namespace TrettioEtt
             Card worstCard = null;
 
             int bestSuitScore = 0;
-
-            //// Slänger JUST NU oberoende av motståndarens bästa suit.
-            //for (int i = 0; i < Hand.Count; ++i)
-            //{
-            //    if (Hand[i].Suit != BestSuit && Hand[i].Value < worstCard.Value)
-            //    {
-            //        worstCard = Hand[i];
-            //    }
-            //}
 
             for (int i = 0; i < Hand.Count; ++i)
             {
@@ -665,7 +672,7 @@ namespace TrettioEtt
                     }
                 }
             }
-            if (worstCard == null)
+            if (worstCard == null || aceCount == 3)
             {
                 worstCard = Hand[0];
             }
@@ -712,6 +719,7 @@ namespace TrettioEtt
             }
         }
 
+        // Sorterar din hand endast beroende på värdet i handen.
         void SortHand()
         {
             Hand = Hand.OrderBy(x => x.Value).ToList();
@@ -1050,7 +1058,7 @@ namespace TrettioEtt
                 opponentTakePile = false;
                 opponentEstHand.Add(OpponentsLatestCard);
             }
-            // Om de tar upp från den vanliga högen så gillar de förmodligen inte de kortet.
+            // Om de tar upp från den vanliga högen så gillar de förmodligen inte det kortet.
             if (OpponentsLatestCard == null)
             {
                 opponentTakePile = true;
@@ -1061,6 +1069,512 @@ namespace TrettioEtt
         void SortHand()
         {
             Hand = Hand.OrderBy(x => x.Value).ToList();
+        }
+
+        // Lägg gärna till egna hjälpmetoder här
+    }
+
+    class ICommitDie : Player  //Döp om denna klass till något unikt, max 14 bokstäver, ändra även i main
+    {
+        //Lägg gärna till egna variabler här
+
+        public ICommitDie() //Skriv samma namn här
+        {
+            Name = "Williams AI"; //Skriv in samma namn här
+        }
+
+        public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
+        {
+
+            // Sett till så att jag knackar vid olika poäng beroende på rundor.
+            int knock = 0;
+            if (round < 4)
+            {
+                knock = 18;
+            }
+            if (round < 10 && round > 3)
+            {
+                knock = 21;
+            }
+            if (round > 9)
+            {
+                knock = 24;
+            }
+
+            if (Game.Score(this) >= knock)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken.
+        {
+            // Anvnder en metod som avgör vilka kort som e bra.
+            if (PickUpTrash(card))
+            {
+                return true;
+            }
+            if (!PickUpTrash(card))
+            {
+                return false;
+            }
+            return false;
+        }
+
+        public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen
+        {
+            // Sämsta kortet i handen bestäms av metod.
+            Card wortCard = ThrowCard();
+
+
+            // Om jag har 2 ess på handen slänger jag något annat.
+            List<Card> Aces = new List<Card>();
+            for (int i = 0; i < 3; i++)
+            {
+                if (Hand[i].Value == 11)
+                {
+                    Aces.Add(Hand[i]);
+                }
+            }
+
+            if (Aces.Count >= 2)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    if (Hand[i].Value < wortCard.Value)
+                    {
+                        wortCard = Hand[i];
+                    }
+                }
+            }
+
+            return wortCard;
+        }
+
+        public override void SpelSlut(bool wonTheGame) // Anropas när ett spel tar slut. Wongames++ får ej ändras!
+        {
+            if (wonTheGame)
+            {
+                Wongames++;
+            }
+        }
+
+        private int CardValue(Card card) // Hjälpmetod som kan användas för att värdera hur bra ett kort är
+        {
+            int value = 0;
+            if (card.Suit == BestSuit)
+            {
+                value = card.Value + 20;
+            }
+            if (card.Suit != BestSuit)
+            {
+                value = card.Value;
+            }
+            return value;
+        }
+
+        // Lägg gärna till egna hjälpmetoder här
+
+        private bool PickUpTrash(Card card)
+        {
+
+            // Om kortet e bra för handen 
+            int oldScore = Game.Score(this);
+            Hand.Add(card);
+            int newScore = Game.Score(this);
+            Hand.RemoveAt(Hand.Count - 1);
+            if (oldScore < newScore)
+            {
+                if (card.Value <= 4)
+                {
+                    return false;
+                }
+                return true;
+            }
+            return false;
+
+        }
+
+        private Card ThrowCard()
+        {
+            int[] tempScore = new int[4];
+            int score = 0;
+            int worstI = 0;
+            for (int i = 0; i < tempScore.Length; i++)
+            {
+                tempScore[i] = Game.HandScore(Hand, Hand[i]);
+            }
+
+            for (int i = 0; i < tempScore.Length; i++)
+            {
+                if (tempScore[i] > score)
+                {
+                    score = tempScore[i];
+                    worstI = i;
+                }
+            }
+            Card badCard = Hand[worstI];
+
+            return badCard;
+        }
+    }
+
+    class MathBot1 : Player
+    {
+        Card scrapPileCard;
+
+        int
+            aceCount,
+            amountKnownCards,
+            round;
+        float
+            averageCardValue = 7.3f,
+            moreThan50startHandValue = 14.6f,
+            averageGayValue = 13f,
+            averageStartHandValue = 12.1f;
+        bool opponentTakePile;
+
+        public MathBot1()
+        {
+            Name = "MathBot1";
+        }
+
+        public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
+        {
+            return false;
+        }
+
+        public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
+        {
+            // Benjamin 
+            scrapPileCard = card;
+            SortHand();
+
+            // Räknar antal ess vi har i vår hand.
+            aceCount = 0;
+            for (int i = 0; i < Hand.Count; ++i)
+            {
+                if (Hand[i].Value == 11)
+                {
+                    ++aceCount;
+                }
+            }
+            // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
+            if (aceCount >= 2 && card.Value == 11)
+            {
+                return true;
+            }
+
+            int preGameScore = Game.Score(this);
+
+            // Plocka upp så vi har ett så stort värde som möjligt, om skräphögskortet skulle resultera i en ny bestsuit.
+            if (lastTurn)
+            {
+                Hand.Add(card);
+                SortHand();
+
+                if (Game.Score(this) > preGameScore)
+                {
+                    Hand.Remove(card);
+                    return true;
+                }
+                if (Game.Score(this) <= preGameScore)
+                {
+                    Hand.Remove(card);
+                    return false;
+                }
+            }
+            if (!lastTurn)
+            {
+                Hand.Add(card);
+                SortHand();
+
+                // Om skräphögskortet resulterar i en bättre poäng.
+                if (Game.Score(this) > preGameScore)
+                {
+                    Hand.Remove(card);
+                    return true;
+                }
+                // Om skräphögskortet inte resulterar i en bättre poäng
+                if (Game.Score(this) <= preGameScore)
+                {
+                    Hand.Remove(card);
+                    return false;
+                }
+            }
+
+            return false; //Temp return
+        }
+
+        public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort.
+        {
+            SortHand();
+            Game.Score(this);
+
+            Card worstCard = null;
+
+            int bestSuitScore = 0;
+
+            for (int i = 0; i < Hand.Count; ++i)
+            {
+                if (Hand[i].Suit != BestSuit)
+                {
+                    if (Game.HandScore(Hand, Hand[i]) > bestSuitScore)
+                    {
+                        bestSuitScore = Game.HandScore(Hand, Hand[i]);
+                        if (worstCard == null || Hand[i].Value < worstCard.Value)
+                        {
+                            worstCard = Hand[i];
+                        }
+                    }
+                }
+            }
+            if (worstCard == null || aceCount == 3)
+            {
+                worstCard = Hand[0];
+            }
+
+            return worstCard;
+        }
+
+        public override void SpelSlut(bool wonTheGame) // Anropas när ett spel tar slut. Wongames++ får ej ändras!
+        {
+            if (wonTheGame)
+            {
+                Wongames++;
+            }
+
+        }
+
+        private int CardValue(Card card) // Hjälpmetod som kan användas för att värdera hur bra ett kort är
+        {
+            return card.Value;
+        }
+
+        // Sorterar din hand endast beroende på värdet i handen.
+        void SortHand()
+        {
+            Hand = Hand.OrderBy(x => x.Value).ToList();
+        }
+    }
+
+    class MathBot2 : Player
+    {
+        List<Card> opponentEstHand = new List<Card>();
+        List<Card> opponentDontLike = new List<Card>();
+        List<Card> discardPile = new List<Card>();
+
+        Card scrapPileCard;
+
+        int
+            aceCount,
+            amountKnownCards,
+            round;
+        float
+            averageCardValue = 7.3f,
+            moreThan50startHandValue = 14.6f,
+            averageGayValue = 13f,
+            averageStartHandValue = 12.1f;
+        bool opponentTakePile;
+
+        public MathBot2()
+        {
+            Name = "MathBot2";
+        }
+
+        public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
+        {
+            this.round = round;
+            amountKnownCards = opponentEstHand.Count;
+            SortHand();
+
+            // Om vi vet 3 av deras kort kan vi kolla om deras hand + skräphögskortet blir bättre än vår hand, om den inte blir de så knackar vi.
+            if (amountKnownCards == 3)
+            {
+                opponentEstHand.Add(scrapPileCard);
+                opponentEstHand = opponentEstHand.OrderBy(x => x.Value).ToList();
+                int opponentScore = Game.HandScore(opponentEstHand, scrapPileCard);
+                int opponentScrapScore = Game.HandScore(opponentEstHand, null);
+
+                // Om de kan skapa en bättre hand än våran nästa runda så knackar vi inte.
+                if (opponentScrapScore > Game.Score(this))
+                {
+                    return false;
+                }
+                // Om skräphögskortet inte resulterar i en bättre hand för motståndaren så är chansen liten att de drar ett kort av just deras suit, därför borde vi i 3 av 4 fall knacka.
+                if (opponentScrapScore == opponentScore)
+                {
+                    if (opponentScore < Game.Score(this))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (Game.Score(this) >= 23)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
+        {
+            // Benjamin 
+            scrapPileCard = card;
+            SortHand();
+
+            OpponentGuess(card);
+
+            // Räknar antal ess vi har i vår hand.
+            aceCount = 0;
+            for (int i = 0; i < Hand.Count; ++i)
+            {
+                if (Hand[i].Value == 11)
+                {
+                    ++aceCount;
+                }
+            }
+            // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
+            if (aceCount >= 2 && card.Value == 11)
+            {
+                return true;
+            }
+
+            int preGameScore = Game.Score(this);
+
+            // Plocka upp så vi har ett så stort värde som möjligt, om skräphögskortet skulle resultera i en ny bestsuit.
+            if (lastTurn)
+            {
+                Hand.Add(card);
+                SortHand();
+
+                if (Game.Score(this) > preGameScore)
+                {
+                    Hand.Remove(card);
+                    return true;
+                }
+                if (Game.Score(this) <= preGameScore)
+                {
+                    Hand.Remove(card);
+                    return false;
+                }
+            }
+            if (!lastTurn)
+            {
+                Hand.Add(card);
+                SortHand();
+
+                // Om skräphögskortet resulterar i en bättre poäng.
+                if (Game.Score(this) > preGameScore)
+                {
+                    Hand.Remove(card);
+                    return true;
+                }
+                // Om skräphögskortet inte resulterar i en bättre poäng
+                if (Game.Score(this) <= preGameScore)
+                {
+                    Hand.Remove(card);
+                    return false;
+                }
+
+                discardPile.Add(card);
+            }
+
+            return false; //Temp return
+        }
+
+        public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort.
+        {
+            SortHand();
+            Game.Score(this);
+
+            Card worstCard = null;
+
+            int bestSuitScore = 0;
+
+            for (int i = 0; i < Hand.Count; ++i)
+            {
+                if (Hand[i].Suit != BestSuit)
+                {
+                    if (Game.HandScore(Hand, Hand[i]) > bestSuitScore)
+                    {
+                        bestSuitScore = Game.HandScore(Hand, Hand[i]);
+                        if (worstCard == null || Hand[i].Value < worstCard.Value)
+                        {
+                            worstCard = Hand[i];
+                        }
+                    }
+                }
+            }
+            if (worstCard == null || aceCount == 3)
+            {
+                worstCard = Hand[0];
+            }
+
+            return worstCard;
+        }
+
+        public override void SpelSlut(bool wonTheGame) // Anropas när ett spel tar slut. Wongames++ får ej ändras!
+        {
+            if (wonTheGame)
+            {
+                Wongames++;
+            }
+
+        }
+
+        private int CardValue(Card card) // Hjälpmetod som kan användas för att värdera hur bra ett kort är
+        {
+            return card.Value;
+        }
+
+        void OpponentGuess(Card card)
+        {
+            // Vår gissning av motsåndarens hand måste uppdateras om de slänger 1 kort.
+            for (int i = 0; i < opponentEstHand.Count; ++i)
+            {
+                if (opponentEstHand[i] == card)
+                {
+                    opponentEstHand.Remove(card);
+                }
+            }
+
+            // Om de tar upp från skräphögen så kan vi lägga till ett kort i vår gissning av motståndares hand.
+            if (OpponentsLatestCard != null)
+            {
+                opponentTakePile = false;
+                opponentEstHand.Add(OpponentsLatestCard);
+            }
+            // Om de tar upp från den vanliga högen så gillar de förmodligen inte de kortet.
+            if (OpponentsLatestCard == null)
+            {
+                opponentTakePile = true;
+                opponentDontLike.Add(card);
+            }
+        }
+
+        // Sorterar din hand endast beroende på värdet i handen.
+        void SortHand()
+        {
+            Hand = Hand.OrderBy(x => x.Value).ToList();
+        }
+
+        int HandScore()
+        {
+            int handScore = 0;
+            for (int i = 0; i < Hand.Count; ++i)
+            {
+                handScore += Hand[i].Value;
+            }
+            return handScore;
         }
 
         // Lägg gärna till egna hjälpmetoder här
