@@ -1225,12 +1225,14 @@ namespace TrettioEtt
 
     class MathBot1 : Player
     {
+        List<List<int>> averageHandValues = new List<List<int>>();
+        List<int> handValues = new List<int>();
+
         Card scrapPileCard;
 
         int
             aceCount,
-            amountKnownCards,
-            round;
+            round = 0;
         float
             averageCardValue = 7.3f,
             moreThan50startHandValue = 14.6f,
@@ -1245,7 +1247,9 @@ namespace TrettioEtt
 
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
         {
-
+            int handValue = Game.Score(this);
+            ++this.round;
+            handValues.Add(handValue);
 
             return false;
         }
