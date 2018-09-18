@@ -906,19 +906,52 @@ namespace TrettioEtt
             Game.Score(this);
 
             Card worstCard = null;
-            bool worstCardFound = false;
-            int aces = 0;
+            Card worstBestSuitCard = null;
+            List<Card> Aces = new List<Card>();
+            List<Card> NotAces = new List<Card>();
 
+            //Delar upp ess och andra kort.
             for (int i = 0; i < Hand.Count; i++)
+            {
                 if (Hand[i].Value == 11)
-                    ++aces;
+                    Aces.Add(Hand[i]);
+                else
+                    NotAces.Add(Hand[i]);
+            }
 
-            if (aces == 3)
-                for (int i = 0; i < Hand.Count; i++)
-                    if (Hand[i].Value != 11)
-                        return Hand[i];
-            
-            //TODO Bestäm vad som skas göras med 2,1 eller o ess.
+            //Om vi har tre ess (Hade vi haft fyra så borde vi redan vunnit) ska vi slänga det kortet som inte är ett ess så att vi vinner direkt.
+            if (Aces.Count == 3)
+                worstCard = NotAces[0];
+
+            //Om vi har två ess så ska ett ess som inte tillhör bestsuit och egentligen är worstcard bara behållas om vi har ett kort som är värt <= 3(Subject to change) och den optimala poängen <= 18(Subject to change).
+            if (Aces.Count == 2)
+            {
+                worstCard = GetWorstCard();
+
+                if (worstCard.Value == 11 && Game.HandScore(Hand, null) < 18)
+                {
+                    worstBestSuitCard = GetWorstInBestSuit();
+                    if (worstBestSuitCard.Value <= 4)
+                        worstCard = worstBestSuitCard;
+                }
+            }
+
+            if (Aces.Count == 1)
+            {
+                worstCard = GetWorstCard();
+
+                if (worstCard.Value == 11)
+                {
+                    worstBestSuitCard = GetWorstInBestSuit();
+                    if ((Game.HandScore(Hand, worstBestSuitCard) <= 13) && worstBestSuitCard.Value <= 3)
+                    {
+                        worstCard = worstBestSuitCard;
+                    }
+                }
+            }
+
+            if (Aces.Count == 0)
+                worstCard = GetWorstCard();
 
             return worstCard;
 
@@ -965,6 +998,39 @@ namespace TrettioEtt
         private int CardValue(Card card) // Hjälpmetod som kan användas för att värdera hur bra ett kort är
         {
             return card.Value;
+        }
+
+        //Metod för att hitta det traditionelt sämsta kortet. Koden i KastaKort() är huvudsakligen undantag.
+        Card GetWorstCard()
+        {
+            Card worstCard = null;
+            for (int i = 0; i < Hand.Count; i++)
+            {
+                //Vi hittar det sämsta kortet bland korten som inte finns i best suit genom att ta det första som inte tillhör BestSuit. Korten är sorterade från lägsta till högsta värde. 
+                if (Hand[i].Suit != BestSuit)
+                {
+                    worstCard = Hand[i];
+                    i = Hand.Count;
+                }
+            }
+            //Enda fallet då worstCard kan vara null är om alla korten tillhör BestSuit, alltså samma suit. Handen är redan sorterad från lägst till högst värde så om alla är samma färg tar vi det första i handen.
+            if (worstCard == null)
+                worstCard = Hand[0];
+
+            return worstCard;
+        }
+
+        //Metod som returnerar det sämsta kortet i BestSuit
+        Card GetWorstInBestSuit()
+        {
+            for (int i = 0; i < Hand.Count; i++)
+            {
+                //Eftersom handen är sorterad från sämsta till högsta värde så är det första kortet i handen som tillhör BestSuit det sämsta kortet i BestSuit.
+                if (Hand[i].Suit == BestSuit)
+                    return  Hand[i];
+            }
+            //Så att VisualStudio funkar. Kommer aldrig hända.
+            return null;
         }
 
         void OpponentGuess(Card card)
