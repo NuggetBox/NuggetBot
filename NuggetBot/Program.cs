@@ -1245,6 +1245,8 @@ namespace TrettioEtt
 
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
         {
+
+
             return false;
         }
 
