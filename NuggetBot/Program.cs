@@ -1225,14 +1225,16 @@ namespace TrettioEtt
 
     class MathBot1 : Player
     {
-        List<List<int>> averageHandValues = new List<List<int>>();
-        List<int> handValues = new List<int>();
+        // På plats 1 i alla listor ligger värdet som AI:n hade runda 1 i alla games.
+        List<List<int>> handValues = new List<List<int>>();
 
         Card scrapPileCard;
 
         int
             aceCount,
-            round = 0;
+            games,
+            turn = 0,
+            fewestTurns = 0;
         float
             averageCardValue = 7.3f,
             moreThan50startHandValue = 14.6f,
@@ -1248,8 +1250,13 @@ namespace TrettioEtt
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
         {
             int handValue = Game.Score(this);
-            ++this.round;
-            handValues.Add(handValue);
+            ++turn;
+
+            if (games == 0)
+            {
+                handValues.Add(new List<int>());
+            }
+            handValues[turn].Add(handValue);
 
             return false;
         }
@@ -1349,11 +1356,23 @@ namespace TrettioEtt
 
         public override void SpelSlut(bool wonTheGame) // Anropas när ett spel tar slut. Wongames++ får ej ändras!
         {
+            ++games;
+            Console.WriteLine(games);
+            turn = 0;
+
+            if (games == 1)
+            {
+                fewestTurns = handValues[games].Count;
+            }
+            if (handValues[games].Count < fewestTurns)
+            {
+                fewestTurns = handValues[games].Count;
+            }
+
             if (wonTheGame)
             {
                 Wongames++;
             }
-
         }
 
         private int CardValue(Card card) // Hjälpmetod som kan användas för att värdera hur bra ett kort är
