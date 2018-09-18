@@ -816,10 +816,10 @@ namespace TrettioEtt
             {
                 return true;
             }
-            else if (round == 1 && Game.Score(this) >= 20 && round % 2 != 0)
+            /*else if (round == 2 && Game.Score(this) >= 20 && round % 2 != 0)
             {
                 return true;
-            }
+            }*/
             else
             {
                 return false;
@@ -834,14 +834,12 @@ namespace TrettioEtt
             OpponentGuess(card);
 
             aceCount = 0;
+
             // Räknar antal ess vi har i vår hand.
             for (int i = 0; i < Hand.Count; ++i)
-            {
                 if (Hand[i].Value == 11)
-                {
                     ++aceCount;
-                }
-            }
+
             // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
             if (aceCount >= 2 && card.Value == 11)
             {
@@ -906,6 +904,26 @@ namespace TrettioEtt
             Game.Score(this);
 
             Card worstCard = null;
+            bool worstCardFound = false;
+            int aces = 0;
+
+            for (int i = 0; i < Hand.Count; i++)
+                if (Hand[i].Value == 11)
+                    ++aces;
+
+            if (aces == 3)
+                for (int i = 0; i < Hand.Count; i++)
+                    if (Hand[i].Value != 11)
+                        return Hand[i];
+            
+            //TODO Bestäm vad som skas göras med 2,1 eller o ess.
+
+            return worstCard;
+
+            /*SortHand();
+            Game.Score(this);
+
+            Card worstCard = null;
 
             int bestSuitScore = 0;
             int handScore = 0;
@@ -930,7 +948,7 @@ namespace TrettioEtt
                 worstCard = Hand[0];
             }
 
-            return worstCard;
+            return worstCard;*/
         }
 
         public override void SpelSlut(bool wonTheGame) // Anropas när ett spel tar slut. Wongames++ får ej ändras!
