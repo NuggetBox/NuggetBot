@@ -523,7 +523,6 @@ namespace TrettioEtt
     class NuggetBot : Player
     {
         List<Card> opponentEstHand = new List<Card>();
-        List<Card> opponentDontLike = new List<Card>();
 
         Card scrapPileCard;
 
@@ -556,7 +555,7 @@ namespace TrettioEtt
                 opponentEstHand.Add(scrapPileCard);
                 opponentEstHand = opponentEstHand.OrderBy(x => x.Value).ToList();
                 int opponentScore = Game.HandScore(opponentEstHand, scrapPileCard);
-                int opponentScrapScore = Game.HandScore(opponentEstHand, null);
+                int opponentScrapScore = Game.HandScore(opponentEstHand, opponentEstHand[0]);
 
                 // Om de kan skapa en bättre hand än våran nästa runda så knackar vi inte.
                 if (opponentScrapScore > Game.Score(this))
@@ -732,7 +731,6 @@ namespace TrettioEtt
             if (OpponentsLatestCard == null)
             {
                 opponentTakePile = true;
-                opponentDontLike.Add(card);
             }
         }
 
@@ -821,43 +819,61 @@ namespace TrettioEtt
     class Bot2Beat : Player
     {
         List<Card> opponentEstHand = new List<Card>();
-        List<Card> opponentDontLike = new List<Card>();
-        List<Card> discardPile = new List<Card>();
 
-        Card latestThrownCard;
+        Card scrapCard;
 
         int
-            aceCount,
-            round,
             thisTurnNum = 0,
-            lastTurnToGoWide = 2,
+            amountKnownCards,
+            lastTurnToGoWide = 5,
             lowestScrapValueToGoWide = 8,
-            highestHandValueToGoWide = 15,
+            highestHandValueToGoWide = 19,
             highestLowValueCard = 3;
         float
-            averageCardValue = 7.3f,
-            averageStartValue = 13f;
-        bool opponentTakePile;
+            averageCardValue = 7.3f;
 
         public Bot2Beat()
         {
             Name = "Bot2Beat";
         }
 
+        // Benjamin
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
         {
             ++thisTurnNum;
-            this.round = round;
+            amountKnownCards = opponentEstHand.Count;
             SortHand();
 
-            if (Game.Score(this) >= 23)
+            // Om vi vet 3 av deras kort kan vi kolla om deras hand + skräphögskortet blir bättre än vår hand, om den inte blir de så knackar vi.
+            if (amountKnownCards == 3)
+            {
+                opponentEstHand.Add(scrapCard);
+                opponentEstHand = opponentEstHand.OrderBy(x => x.Value).ToList();
+                int opponentScore = Game.HandScore(opponentEstHand, scrapCard);
+                int opponentScrapScore = Game.HandScore(opponentEstHand, GetWorstCard(opponentEstHand));
+                opponentEstHand.Remove(scrapCard);
+
+                // Om de kan skapa en bättre hand än våran nästa runda så knackar vi inte.
+                if (opponentScrapScore > Game.Score(this))
+                {
+                    return false;
+                }
+                // Om skräphögskortet inte resulterar i en bättre hand för motståndaren så är chansen liten att de drar ett kort av just deras suit, därför borde vi i 3 av 4 fall knacka.
+                if (opponentScrapScore == opponentScore)
+                {
+                    if (opponentScore < Game.Score(this))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            int whenToKnock = WhenToKnock(thisTurnNum);
+
+            if (Game.Score(this) >= whenToKnock)
             {
                 return true;
             }
-            /*else if (round == 2 && Game.Score(this) >= 20 && round % 2 != 0)
-            {
-                return true;
-            }*/
             else
             {
                 return false;
@@ -866,11 +882,12 @@ namespace TrettioEtt
 
         public override bool TaUppKort(Card scrapCard) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
         {
+            this.scrapCard = scrapCard;
             SortHand();
             int preGameScore = Game.Score(this);
             OpponentGuess(scrapCard);
             Card newWorstCard;
-            newWorstCard = GetWorstCard();
+            newWorstCard = GetWorstCard(Hand);
 
             // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
             if (GetNumOfAceInHand() >= 2 && scrapCard.Value == 11)
@@ -921,7 +938,7 @@ namespace TrettioEtt
             if (aceCounter <= 2)
             {
                 // För att hitta det traditionelt sämsta kortet i handen.
-                worstCard = GetWorstCard();
+                worstCard = GetWorstCard(Hand);
 
                 // Följande är för att hitta undantagen.
 
@@ -974,21 +991,21 @@ namespace TrettioEtt
         }
 
         //Metod för att hitta det traditionelt sämsta kortet. Koden i KastaKort() är huvudsakligen undantag.
-        Card GetWorstCard()
+        Card GetWorstCard(List<Card> hand)
         {
             Card worstCard = null;
-            for (int i = 0; i < Hand.Count; i++)
+            for (int i = 0; i < hand.Count; i++)
             {
                 //Vi hittar det sämsta kortet bland korten som inte finns i best suit genom att ta det första som inte tillhör BestSuit. Korten är sorterade från lägsta till högsta värde. 
-                if (Hand[i].Suit != BestSuit)
+                if (hand[i].Suit != BestSuit)
                 {
-                    worstCard = Hand[i];
-                    i = Hand.Count;
+                    worstCard = hand[i];
+                    i = hand.Count;
                 }
             }
             //Enda fallet då worstCard kan vara null är om alla korten tillhör BestSuit, alltså samma suit. Handen är redan sorterad från lägst till högst värde så om alla är samma färg tar vi det första i handen.
             if (worstCard == null)
-                worstCard = Hand[0];
+                worstCard = hand[0];
 
             return worstCard;
         }
@@ -1032,6 +1049,8 @@ namespace TrettioEtt
             return (Suit)0;
         }
 
+        // Benjamin/Måns
+        // Metod som kollar om skräphögskortet förbättrar vår hands poäng.
         bool IsTheNewHandBetter(int preGameScore, Card scrapCard, Card newWorstCard)
         {
             if (Game.Score(this) > preGameScore)
@@ -1048,6 +1067,7 @@ namespace TrettioEtt
             }
         }
 
+        // Returnerar antalet ess vi har i vår hand.
         int GetNumOfAceInHand()
         {
             int aceCounter = 0;
@@ -1059,6 +1079,8 @@ namespace TrettioEtt
             return aceCounter;
         }
 
+        // Benjamin
+        // Uppdaterar listan av de kort vi vet finns i motståndarens hand.
         void OpponentGuess(Card card)
         {
             // Vår gissning av motsåndarens hand måste uppdateras om de slänger 1 kort.
@@ -1073,20 +1095,22 @@ namespace TrettioEtt
             // Om de tar upp från skräphögen så kan vi lägga till ett kort i vår gissning av motståndares hand.
             if (OpponentsLatestCard != null)
             {
-                opponentTakePile = false;
                 opponentEstHand.Add(OpponentsLatestCard);
-            }
-            // Om de tar upp från den vanliga högen så gillar de förmodligen inte det kortet.
-            if (OpponentsLatestCard == null)
-            {
-                opponentTakePile = true;
-                opponentDontLike.Add(card);
             }
         }
 
+        // Benjamin
+        // Sorterar hela din hand endast beroende på värdet på kortet, är användbart i många situationer. 
         void SortHand()
         {
             Hand = Hand.OrderBy(x => x.Value).ToList();
+        }
+
+        // Benjamin
+        // Metod som returnerar ett värde som vår hand måste vara större än för att vi ska knacka.
+        int WhenToKnock(int turn)
+        {
+            return 23;
         }
 
         // Lägg gärna till egna hjälpmetoder här
