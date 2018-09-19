@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -524,13 +525,13 @@ namespace TrettioEtt
     {
         List<Card> opponentEstHand = new List<Card>();
         List<Card> opponentDontLike = new List<Card>();
-        List<Card> discardPile = new List<Card>();
 
         Card scrapPileCard;
 
         int
             aceCount,
             amountKnownCards,
+            turn = 0,
             round;
         float
             averageCardValue = 7.3f,
@@ -573,7 +574,10 @@ namespace TrettioEtt
                 }
             }
 
-            if (Game.Score(this) >= 23)
+            int whenToKnock = WhenToKnock(turn);
+            ++turn;
+
+            if (Game.Score(this) >= whenToKnock)
             {
                 return true;
             }
@@ -581,6 +585,15 @@ namespace TrettioEtt
             {
                 return false;
             }
+
+            //if (Game.Score(this) >= 23)
+            //{
+            //    return true;
+            //}
+            //else
+            //{
+            //    return false;
+            //}
         }
 
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
@@ -608,7 +621,7 @@ namespace TrettioEtt
 
             int preGameScore = Game.Score(this);
 
-            // Plocka upp så vi har ett så stort värde som möjligt, om skräphögskortet skulle resultera i en ny bestsuit.
+            // Plocka upp så vi har ett så stort värde som möjligt, eller om skräphögskortet skulle resultera i en ny bestsuit.
             if (lastTurn)
             {
                 Hand.Add(card);
@@ -617,7 +630,14 @@ namespace TrettioEtt
                 if (Game.Score(this) > preGameScore)
                 {
                     Hand.Remove(card);
-                    return true;
+                    for (int i = 0; i < Hand.Count; ++i)
+                    {
+                        if (card.Value > Hand[i].Value)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
                 }
                 if (Game.Score(this) <= preGameScore)
                 {
@@ -642,8 +662,6 @@ namespace TrettioEtt
                     Hand.Remove(card);
                     return false;
                 }
-
-                discardPile.Add(card);
             }
 
             return false; //Temp return
@@ -725,14 +743,19 @@ namespace TrettioEtt
             Hand = Hand.OrderBy(x => x.Value).ToList();
         }
 
-        int HandScore()
+        //int HandScore()
+        //{
+        //    int handScore = 0;
+        //    for (int i = 0; i < Hand.Count; ++i)
+        //    {
+        //        handScore += Hand[i].Value;
+        //    }
+        //    return handScore;
+        //}
+
+        int WhenToKnock(int turn)
         {
-            int handScore = 0;
-            for (int i = 0; i < Hand.Count; ++i)
-            {
-                handScore += Hand[i].Value;
-            }
-            return handScore;
+            return 23;
         }
 
         // Lägg gärna till egna hjälpmetoder här
@@ -1228,8 +1251,9 @@ namespace TrettioEtt
 
     class MathBot1 : Player
     {
-        // På plats 1 i alla listor ligger värdet som AI:n hade runda 1 i alla games.
-        List<List<int>> handValues = new List<List<int>>();
+        List<int> totalHandValues = new List<int>();
+        List<float> averageHandValues = new List<float>();
+        List<int> roundOccurence = new List<int>();
 
         Card scrapPileCard;
 
@@ -1250,17 +1274,19 @@ namespace TrettioEtt
             Name = "MathBot1";
         }
 
-        public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
+        public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2. Formatet för GeoGebra är (x, y), (x, y), 
         {
             int handValue = Game.Score(this);
 
-            if (handValues.Count <= turn)
+            if (totalHandValues.Count <= turn)
             {
-                handValues.Add(new List<int>());
+                totalHandValues.Add(0);
+                roundOccurence.Add(0);
             }
-            handValues[turn].Add(handValue);
-            ++turn;
+            roundOccurence[turn]++;
+            totalHandValues[turn] += handValue;
 
+            ++turn;
             return false;
         }
 
@@ -1366,6 +1392,22 @@ namespace TrettioEtt
             {
                 Wongames++;
             }
+
+            if (games >= 9999)
+            {
+                string path = Environment.CurrentDirectory;
+                Directory.CreateDirectory(path + "/File Saving Folder");
+                FileWrite fileWrite = new FileWrite();
+
+                for (int i = 0; i < totalHandValues.Count; ++i)
+                {
+                    averageHandValues.Add(0);
+                    decimal curAverage = totalHandValues[i] / roundOccurence[i];
+                    averageHandValues[i] = (float)Math.Round(curAverage, 3);
+                }
+
+                fileWrite.Write(@path, averageHandValues);
+            }
         }
 
         private int CardValue(Card card) // Hjälpmetod som kan användas för att värdera hur bra ett kort är
@@ -1406,41 +1448,7 @@ namespace TrettioEtt
 
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false. Runda 1 är round = 2.
         {
-            this.round = round;
-            amountKnownCards = opponentEstHand.Count;
-            SortHand();
-
-            // Om vi vet 3 av deras kort kan vi kolla om deras hand + skräphögskortet blir bättre än vår hand, om den inte blir de så knackar vi.
-            if (amountKnownCards == 3)
-            {
-                opponentEstHand.Add(scrapPileCard);
-                opponentEstHand = opponentEstHand.OrderBy(x => x.Value).ToList();
-                int opponentScore = Game.HandScore(opponentEstHand, scrapPileCard);
-                int opponentScrapScore = Game.HandScore(opponentEstHand, null);
-
-                // Om de kan skapa en bättre hand än våran nästa runda så knackar vi inte.
-                if (opponentScrapScore > Game.Score(this))
-                {
-                    return false;
-                }
-                // Om skräphögskortet inte resulterar i en bättre hand för motståndaren så är chansen liten att de drar ett kort av just deras suit, därför borde vi i 3 av 4 fall knacka.
-                if (opponentScrapScore == opponentScore)
-                {
-                    if (opponentScore < Game.Score(this))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            if (Game.Score(this) >= 23)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return false;
         }
 
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
@@ -1448,8 +1456,6 @@ namespace TrettioEtt
             // Benjamin 
             scrapPileCard = card;
             SortHand();
-
-            OpponentGuess(card);
 
             // Räknar antal ess vi har i vår hand.
             aceCount = 0;
@@ -1554,31 +1560,6 @@ namespace TrettioEtt
             return card.Value;
         }
 
-        void OpponentGuess(Card card)
-        {
-            // Vår gissning av motsåndarens hand måste uppdateras om de slänger 1 kort.
-            for (int i = 0; i < opponentEstHand.Count; ++i)
-            {
-                if (opponentEstHand[i] == card)
-                {
-                    opponentEstHand.Remove(card);
-                }
-            }
-
-            // Om de tar upp från skräphögen så kan vi lägga till ett kort i vår gissning av motståndares hand.
-            if (OpponentsLatestCard != null)
-            {
-                opponentTakePile = false;
-                opponentEstHand.Add(OpponentsLatestCard);
-            }
-            // Om de tar upp från den vanliga högen så gillar de förmodligen inte de kortet.
-            if (OpponentsLatestCard == null)
-            {
-                opponentTakePile = true;
-                opponentDontLike.Add(card);
-            }
-        }
-
         // Sorterar din hand endast beroende på värdet i handen.
         void SortHand()
         {
@@ -1596,5 +1577,18 @@ namespace TrettioEtt
         }
 
         // Lägg gärna till egna hjälpmetoder här
+    }
+
+    class FileWrite
+    {
+        public void Write(string path, List<float> averageHandValues)
+        {
+            string printData = "";
+            for (int i = 0; i < averageHandValues.Count; ++i)
+            {
+                printData += "(" + i + ", " + averageHandValues[i] + "), ";
+            }
+            File.WriteAllText(path + "/File Saving Folder/MyOwnData.txt", printData);
+        }
     }
 }
