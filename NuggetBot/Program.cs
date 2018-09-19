@@ -830,7 +830,11 @@ namespace TrettioEtt
         int
             aceCount,
             round,
-            thisTurnNum = 0;
+            thisTurnNum = 0,
+            lastTurnToGoWide = 2,
+            lowestScrapValueToGoWide = 8,
+            highestHandValueToGoWide = 15,
+            highestLowValueCard = 3;
         float
             averageCardValue = 7.3f,
             averageStartValue = 13f;
@@ -873,28 +877,17 @@ namespace TrettioEtt
             if (GetNumOfAceInHand() >= 2 && scrapCard.Value == 11)
                 return true;
 
-            if (lastTurn || thisTurnNum > 2)
+            if (lastTurn || thisTurnNum > lastTurnToGoWide)
             {
                 Hand.Add(scrapCard);
                 Hand.Remove(newWorstCard);
 
-                if (Game.Score(this) > preGameScore)
-                {
-                    Hand.Remove(scrapCard);
-                    Hand.Add(newWorstCard);
-                    return true;
-                }
-                if (Game.Score(this) <= preGameScore)
-                {
-                    Hand.Remove(scrapCard);
-                    Hand.Add(newWorstCard);
-                    return false;
-                }
+                return IsTheNewHandBetter(preGameScore, scrapCard, newWorstCard);
             }
             else
             {
                 Hand.Add(scrapCard);
-                if (scrapCard.Value >= 8 && Game.Score(this) <= 15 && KastaKort() != scrapCard)
+                if (scrapCard.Value >= lowestScrapValueToGoWide && Game.Score(this) <= highestHandValueToGoWide && KastaKort() != scrapCard)
                 {
                     Hand.Remove(scrapCard);
                     return true;
@@ -903,25 +896,9 @@ namespace TrettioEtt
                 {
                     Hand.Remove(newWorstCard);
 
-                    if (Game.Score(this) > preGameScore)
-                    {
-                        Hand.Remove(scrapCard);
-                        Hand.Add(newWorstCard);
-                        return true;
-                    }
-                    if (Game.Score(this) <= preGameScore)
-                    {
-                        Hand.Remove(scrapCard);
-                        Hand.Add(newWorstCard);
-                        return false;
-                    }
+                    return IsTheNewHandBetter(preGameScore, scrapCard, newWorstCard);
                 }
             }
-
-            if (true)//tidig runda, hand värd lite, skräp kort värd lite, gambla
-            
-
-            return false;
         }
         
         public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort. 
@@ -959,9 +936,9 @@ namespace TrettioEtt
 
                     if (notBestSuits.Count > 0)
                     {
-                        if (thisTurnNum <= 2 && worstCard.Value <= 3)
+                        if (thisTurnNum <= lastTurnToGoWide && worstCard.Value <= highestLowValueCard)
                         {
-                            if (notBestSuits[0].Value <= 3)
+                            if (notBestSuits[0].Value <= highestLowValueCard)
                                 worstCard = notBestSuits[0];
                         }
                         else
@@ -975,7 +952,7 @@ namespace TrettioEtt
                 // för att ha en del i flera färger så att om vi drar höga kort från högen så är det större chans att vi redan har av den färgen.
                 // Detta har prioritet över tidigare undantag.
                 worstBestSuitCard = GetWorstInBestSuit();
-                if (!lastTurn && worstCard.Value >= 8 && Game.Score(this) <= 15 && worstBestSuitCard.Value <= 3 && thisTurnNum <= 2)
+                if (!lastTurn && worstCard.Value >= lowestScrapValueToGoWide && Game.Score(this) <= highestHandValueToGoWide && worstBestSuitCard.Value <= highestLowValueCard && thisTurnNum <= lastTurnToGoWide)
                 {
                     worstCard = worstBestSuitCard;
                 }
@@ -1054,6 +1031,22 @@ namespace TrettioEtt
 
             // Kommer aldrig hända. Bara så att koden kan köras.
             return (Suit)0;
+        }
+
+        bool IsTheNewHandBetter(int preGameScore, Card scrapCard, Card newWorstCard)
+        {
+            if (Game.Score(this) > preGameScore)
+            {
+                Hand.Remove(scrapCard);
+                Hand.Add(newWorstCard);
+                return true;
+            }
+            else
+            {
+                Hand.Remove(scrapCard);
+                Hand.Add(newWorstCard);
+                return false;
+            }
         }
 
         int GetNumOfAceInHand()
