@@ -520,7 +520,6 @@ namespace TrettioEtt
         public abstract void SpelSlut(bool wonTheGame);
     }
 
-    //TODO
     class NuggetBot : Player
     {
         List<Card> opponentEstHand = new List<Card>();
