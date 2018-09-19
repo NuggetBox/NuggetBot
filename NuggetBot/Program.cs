@@ -531,6 +531,7 @@ namespace TrettioEtt
         int
             aceCount,
             amountKnownCards,
+            turn = 0,
             round;
         float
             averageCardValue = 7.3f,
@@ -573,7 +574,10 @@ namespace TrettioEtt
                 }
             }
 
-            if (Game.Score(this) >= 23)
+            int whenToKnock = WhenToKnock(turn);
+            ++turn;
+
+            if (Game.Score(this) >= whenToKnock)
             {
                 return true;
             }
@@ -581,6 +585,15 @@ namespace TrettioEtt
             {
                 return false;
             }
+
+            //if (Game.Score(this) >= 23)
+            //{
+            //    return true;
+            //}
+            //else
+            //{
+            //    return false;
+            //}
         }
 
         public override bool TaUppKort(Card card) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Card i parametern är skräphögskortet.
@@ -608,7 +621,7 @@ namespace TrettioEtt
 
             int preGameScore = Game.Score(this);
 
-            // Plocka upp så vi har ett så stort värde som möjligt, om skräphögskortet skulle resultera i en ny bestsuit.
+            // Plocka upp så vi har ett så stort värde som möjligt, eller om skräphögskortet skulle resultera i en ny bestsuit.
             if (lastTurn)
             {
                 Hand.Add(card);
@@ -617,7 +630,14 @@ namespace TrettioEtt
                 if (Game.Score(this) > preGameScore)
                 {
                     Hand.Remove(card);
-                    return true;
+                    for (int i = 0; i < Hand.Count; ++i)
+                    {
+                        if (card.Value > Hand[i].Value)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
                 }
                 if (Game.Score(this) <= preGameScore)
                 {
@@ -723,14 +743,19 @@ namespace TrettioEtt
             Hand = Hand.OrderBy(x => x.Value).ToList();
         }
 
-        int HandScore()
+        //int HandScore()
+        //{
+        //    int handScore = 0;
+        //    for (int i = 0; i < Hand.Count; ++i)
+        //    {
+        //        handScore += Hand[i].Value;
+        //    }
+        //    return handScore;
+        //}
+
+        int WhenToKnock(int turn)
         {
-            int handScore = 0;
-            for (int i = 0; i < Hand.Count; ++i)
-            {
-                handScore += Hand[i].Value;
-            }
-            return handScore;
+            return 23;
         }
 
         // Lägg gärna till egna hjälpmetoder här
