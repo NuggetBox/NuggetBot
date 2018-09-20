@@ -541,6 +541,7 @@ namespace TrettioEtt
         }
 
         // Benjamin
+        // Knacka vid 23
         public override bool Knacka(int round) //Returnerar true om spelaren skall knacka, annars false
         {
             ++thisTurnNum;
@@ -559,6 +560,7 @@ namespace TrettioEtt
             }
         }
 
+        //Måns/Benjamin (Grundläggande TaUppKort metod skrev Benjamin och undantagen togs sedan fram av diskussion mellan oss och koden skrevs av Måns)
         public override bool TaUppKort(Card scrapCard) // Returnerar true om spelaren skall ta upp korten på skräphögen (card), annars false för att dra kort från leken. Kortet i parametern är skräphögskortet.
         {
             this.scrapCard = scrapCard;
@@ -620,13 +622,13 @@ namespace TrettioEtt
             }
         }
         
+        // Benjamin/Måns (Benjamin gjorde grundläggande kasta det sämsta kortet metod, undantag kom sedan Måns fram till)
         public override Card KastaKort()  // Returnerar det kort som skall kastas av de fyra som finns på handen. Game.Score(this) returnerar värdet av bestSuit bland alla 4 kort. 
         {
             // Benjamins sorterings kod som är väldigt användbar för att hitta det lägsta kortet.
             SortHand();
             Game.Score(this);
 
-            // Måns
             // Användbara variabler.
             Card worstCard = null;
             Card worstBestSuitCard = null;
@@ -693,7 +695,7 @@ namespace TrettioEtt
             return card.Value;
         }
 
-        // Måns
+        // Måns (Benjamin gjorde en tidigare version av detta men det är kompaktare kod i denna)
         // Metod för att hitta det traditionelt sämsta kortet. Koden i KastaKort() är huvudsakligen undantag.
         Card GetWorstCard(List<Card> hand)
         {
@@ -819,6 +821,27 @@ namespace TrettioEtt
         {
             return 23;
         }
+
+        // Utvärdering
+        // Vi är nästan helt nöjda med vår NuggetBot AI. Den tar upp det kortet som gör handen
+        // så bra den kan bli den rundan med ett par undantag i början. Den räknar även med om 
+        // en helt annan färg än bestsuit resulterar i en bättre hand. Den slänger även det sämsta kortet
+        // i handen med, återigen, ett par undantag i början. Att alltid knacka vid 23 vinner över allt annat
+        // som vi har prövat och har därför stannat i koden ända tills slutet. En sak vi gjorde var att 
+        // vi testade att möta Williams AI och analysera dragen. Det stora misslyckandet och frågetecknet
+        // är att vi förlorar mot Williams AI som gör felaktiga drag vid analys. Vi har fortfarande inte 
+        // listat ut varför han vinner mot oss.
+        // Tillsammans så bollade vi ideér om strategier på lektionerna och hemma, sen slutade det med
+        // att någon av oss implementerade det. Vi är väldigt nöjda med vårt samarbete och vi var båda
+        // lika engagerade och aktiva i projektet.
+
+        // Benjamin: Började med att göra en grundläggande bra AI som vann mot Basic Player 80% av gångerna.
+        // Påbörjade sedan ett långt projekt att få två AI:s att möta varandra och ta fram ett medelvärde
+        // på den genomsnittliga handen varje runda, för att sedan veta när man ska knacka. Detta hjälpte inte alls,
+        // att knacka vid 23 poäng slog allting. Mycket tid blev slösad på slutet här.
+        // Måns: Gjorde ändringar, optimiseringar och undantag till den grundläggande AI:n. Implementerade
+        // tillsammans-utfunderade undantag i TaUppKort och KastaKort. Optimiserade och komprimerade TaUppKort metoden
+        // som Benjamin ursprungligen skrivit.
     }
 
     class Bot2Beat : Player
