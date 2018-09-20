@@ -533,8 +533,6 @@ namespace TrettioEtt
             lowestScrapValueToGoWide = 8,
             highestHandValueToGoWide = 17,
             highestLowValueCard = 3;
-        float
-            averageCardValue = 7.3f;
 
         public NuggetBot()
         {
@@ -590,22 +588,44 @@ namespace TrettioEtt
             SortHand();
             int preGameScore = Game.Score(this);
             OpponentGuess(scrapCard);
-            Card newWorstCard;
-            newWorstCard = GetWorstCard(Hand);
+            Card worstCardInHandBefore;
+            worstCardInHandBefore = GetWorstCard(Hand);
 
             // Om vi har 2 ess redan så tar vi såklart upp ett tredje från skräphögen.
             if (GetNumOfAceInHand() >= 2 && scrapCard.Value == 11)
                 return true;
 
             // Om de har knackat, eller om det har passerat rundan vi vill utvidga våra suits på så vill vi bara förbättra vår hand så mycket som möjligt.
-            if (lastTurn || thisTurnNum > lastTurnToGoWide)
+            if (lastTurn)
             {
                 Hand.Add(scrapCard);
-                Hand.Remove(newWorstCard);
+                Hand.Remove(worstCardInHandBefore);
 
-                return IsTheNewHandBetter(preGameScore, scrapCard, newWorstCard);
+                if (Game.Score(this) > preGameScore && Game.Score(this) >= 22) 
+                {
+                    Hand.Remove(scrapCard);
+                    Hand.Add(worstCardInHandBefore);
+                    return true;
+                }
+                else
+                {
+                    Hand.Remove(scrapCard);
+                    Hand.Add(worstCardInHandBefore);
+                    return false;
+                }
             }
-            // Om det är tidigt i spelet så vill vi hellre satsa på flera olika suits och inte öka vår hand med små poäng som 2 eller 3.
+            else if (scrapCard.Value <= 3)
+            {
+                return false;
+            }
+            else if (thisTurnNum > lastTurnToGoWide)
+            {
+                Hand.Add(scrapCard);
+                Hand.Remove(worstCardInHandBefore);
+
+                return IsTheNewHandBetter(preGameScore, scrapCard, worstCardInHandBefore);
+            }
+            // Om det är tidigt i spelet så vill vi hellre satsa på flera olika suits och inte öka vår hand med små poäng som 4.
             else
             {
                 Hand.Add(scrapCard);
@@ -616,9 +636,9 @@ namespace TrettioEtt
                 }
                 else
                 {
-                    Hand.Remove(newWorstCard);
+                    Hand.Remove(worstCardInHandBefore);
 
-                    return IsTheNewHandBetter(preGameScore, scrapCard, newWorstCard);
+                    return IsTheNewHandBetter(preGameScore, scrapCard, worstCardInHandBefore);
                 }
             }
         }
@@ -760,18 +780,18 @@ namespace TrettioEtt
 
         // Benjamin/Måns
         // Metod som kollar om skräphögskortet förbättrar vår hands poäng.
-        bool IsTheNewHandBetter(int preGameScore, Card scrapCard, Card newWorstCard)
+        bool IsTheNewHandBetter(int preGameScore, Card scrapCard, Card worstCardInHandBefore)
         {
             if (Game.Score(this) > preGameScore)
             {
                 Hand.Remove(scrapCard);
-                Hand.Add(newWorstCard);
+                Hand.Add(worstCardInHandBefore);
                 return true;
             }
             else
             {
                 Hand.Remove(scrapCard);
-                Hand.Add(newWorstCard);
+                Hand.Add(worstCardInHandBefore);
                 return false;
             }
         }
