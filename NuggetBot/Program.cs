@@ -529,9 +529,9 @@ namespace TrettioEtt
         int
             thisTurnNum = 0,
             amountKnownCards,
-            lastTurnToGoWide = 5,
+            lastTurnToGoWide = 3,
             lowestScrapValueToGoWide = 8,
-            highestHandValueToGoWide = 19,
+            highestHandValueToGoWide = 17,
             highestLowValueCard = 3;
         float
             averageCardValue = 7.3f;
@@ -694,7 +694,8 @@ namespace TrettioEtt
             return card.Value;
         }
 
-        //Metod för att hitta det traditionelt sämsta kortet. Koden i KastaKort() är huvudsakligen undantag.
+        // Måns
+        // Metod för att hitta det traditionelt sämsta kortet. Koden i KastaKort() är huvudsakligen undantag.
         Card GetWorstCard(List<Card> hand)
         {
             Card worstCard = null;
@@ -714,7 +715,8 @@ namespace TrettioEtt
             return worstCard;
         }
 
-        //Metod som returnerar det sämsta kortet i BestSuit.
+        // Måns
+        // Metod som returnerar det sämsta kortet i BestSuit.
         Card GetWorstInBestSuit()
         {
             for (int i = 0; i < Hand.Count; i++)
@@ -727,7 +729,8 @@ namespace TrettioEtt
             return null;
         }
 
-        //Metod som returnerar det vi tror är motståndarens bästa suit.
+        // Måns
+        // Metod som returnerar det vi tror är motståndarens bästa suit.
         Suit GetOpponentEstSuit()
         {
             int[] suitCounter = new int[4];
@@ -771,6 +774,7 @@ namespace TrettioEtt
             }
         }
 
+        // Måns/Benjamin
         // Returnerar antalet ess vi har i vår hand.
         int GetNumOfAceInHand()
         {
@@ -816,8 +820,6 @@ namespace TrettioEtt
         {
             return 23;
         }
-
-        // Lägg gärna till egna hjälpmetoder här
     }
 
     class Bot2Beat : Player
